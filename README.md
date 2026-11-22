@@ -1,28 +1,31 @@
 # SmartStock · Agente de reposición y servidor MCP
 
-Componente de IA que consulta datos de SmartStock, evalúa opciones de reposición y solicita un borrador de compra para revisión humana.
+Componente que analiza necesidades de reposición y prepara propuestas de compra con los datos de SmartStock. Reúne el orquestador de IA, el servidor MCP y la API REST interna que usa el Gateway para iniciar un análisis.
 
-**Stack** · Node.js, TypeScript, Express, SDK de Model Context Protocol, API del modelo de IA y PostgreSQL.
+**Stack** · Node.js, TypeScript, Express, SDK oficial de Model Context Protocol, API del modelo y PostgreSQL.
 
-## Alcance del MVP
+## Responsabilidades
 
-Al iniciar un análisis para un SKU con stock bajo, el agente consulta las existencias y las ventas recientes. Luego usa dos cotizaciones precargadas para comparar costo, plazo de entrega y pedido mínimo. Solicita un borrador con la cantidad y el proveedor propuestos y registra la justificación. El operador aprueba desde el frontend. PostgreSQL registra las ejecuciones del análisis y sus resultados.
+- Obtener el contexto de reposición de un SKU a partir de existencias, ventas recientes y cotizaciones disponibles.
+- Comparar alternativas según costo, plazo de entrega y cantidad mínima, y explicar la recomendación con los datos consultados.
+- Solicitar a Compras un borrador con el proveedor y la cantidad propuestos, a través del Gateway.
+- Registrar las ejecuciones y sus resultados para que el operador pueda revisar la propuesta. La aprobación se realiza en el frontend y queda registrada en Compras.
 
-## Integraciones
+## Interfaces
 
-- El Gateway inicia el análisis mediante una API REST interna.
-- El agente invoca las herramientas del servidor mediante el protocolo MCP sobre Streamable HTTP.
-- Las herramientas consultan y solicitan operaciones del sistema a través del Gateway. Compras valida y guarda el borrador.
-
-## Herramientas previstas
-
-| Herramienta | Acción |
+| Interfaz | Uso |
 |---|---|
-| `get_stock` | Obtener el saldo del SKU. |
-| `get_sales_history` | Consultar ventas recientes. |
-| `list_supplier_offers` | Obtener cotizaciones para el SKU. |
-| `request_purchase_draft` | Solicitar la creación del borrador. |
+| REST interno | El Gateway solicita el inicio de un análisis. Las herramientas acceden a SmartStock a través del Gateway. |
+| MCP sobre Streamable HTTP | El cliente MCP del orquestador invoca las herramientas del servidor. |
+| API del modelo | El orquestador utiliza el modelo para decidir qué información consultar y formular la propuesta. |
 
-## Primera verificación
+## Herramientas de dominio
 
-Ejecutar un análisis con una cotización barata que llega tarde y otra que llega a tiempo. Comprobar que el agente consulta las cotizaciones, justifica su decisión con esos datos y deja un borrador revisable.
+| Herramienta | Propósito |
+|---|---|
+| `get_stock` | Consultar las existencias de un SKU. |
+| `get_sales_history` | Consultar su historial de ventas. |
+| `list_supplier_offers` | Obtener las cotizaciones disponibles. |
+| `request_purchase_draft` | Solicitar un borrador de reposición. |
+
+El repositorio reúne el flujo de análisis, los adaptadores REST y MCP, y el registro de ejecuciones en PostgreSQL. Para una ejecución integrada requiere el Gateway y las credenciales del proveedor del modelo configuradas en el entorno.
